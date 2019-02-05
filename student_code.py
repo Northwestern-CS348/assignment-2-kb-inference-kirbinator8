@@ -132,7 +132,7 @@ class KnowledgeBase(object):
                     supportingf = self._get_fact(j)
 
                     for k in supportingf.supported_by:
-                        if k[0] == fact:
+                        if (k[0] == fact):
                             supportingf.supported_by.remove(k)
 
                     self.help(supportingf)
@@ -140,20 +140,24 @@ class KnowledgeBase(object):
                 for j in supporting_rules:
                     supportingr = self._get_rule(j)
                     for k in supportingr.supported_by:
-                        if k[0] == fact:
+                        if (k[0] == fact):
                             supportingr.supported_by.remove(k)
+
                     self.help(supportingr)
+
                 self.facts.remove(fact)
 
         elif fact_or_rule in self.rules:
             rule = self._get_rule(fact_or_rule)
             supporting_facts1 = rule.supports_facts
             supporting_rules1 = rule.supports_rules
+
             if (len(rule.supported_by) < 1) and (not (rule.asserted)):
+
                 for j in supporting_facts1:
                     supportingf = self._get_fact(j)
                     for k in supportingf.supported_by:
-                        if k[1] == rule:
+                        if (k[1] == rule):
                             supportingf.supported_by.remove(k)
 
                     self.help(supportingf)
@@ -161,9 +165,11 @@ class KnowledgeBase(object):
                 for j in supporting_rules1:
                     supportingr = self._get_rule(j)
                     for k in supportingr.supported_by:
-                        if k[1] == rule:
+                        if (k[1] == rule):
                             supportingr.supported_by.remove(k)
+
                     self.help(supportingr)
+
                 self.rules.remove(rule)
 
     def kb_retract(self, fact):
@@ -201,6 +207,7 @@ class InferenceEngine(object):
         if (my_binding != False):
 
             if (len(rule.lhs) == 1):
+
                 my_fact = Fact(instantiate(rule.rhs, my_binding))
 
                 rule.supports_facts.append(my_fact)
@@ -210,7 +217,9 @@ class InferenceEngine(object):
                 kb.kb_assert(my_fact)
 
             elif (len(rule.lhs) > 1):
+
                 left = []
+
                 for i in range(len(rule.lhs) - 1):
                     left.append(instantiate(rule.lhs[i + 1], my_binding))
 
