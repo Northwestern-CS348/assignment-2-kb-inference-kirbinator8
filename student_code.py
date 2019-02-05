@@ -1,8 +1,10 @@
-import read, copy
+import read
+import copy
 from util import *
 from logical_classes import *
 
 verbose = 0
+
 
 class KnowledgeBase(object):
     def __init__(self, facts=[], rules=[]):
@@ -55,6 +57,7 @@ class KnowledgeBase(object):
             None
         """
         printv("Adding {!r}", 1, verbose, [fact_rule])
+
         if isinstance(fact_rule, Fact):
             if fact_rule not in self.facts:
                 self.facts.append(fact_rule)
@@ -116,19 +119,66 @@ class KnowledgeBase(object):
             print("Invalid ask:", fact.statement)
             return []
 
-    def kb_retract(self, fact_or_rule):
-        """Retract a fact from the KB
+    def help(self, fact_or_rule):
+        if (factq(fact_or_rule)) and (fact_or_rule in self.facts):
+            fact = self._get_fact(fact_or_rule)
+            supporting_facts = fact.supports_facts
+            supporting_rules = fact.supports_rules
 
+            if (fact.supported_by):
+                fact.asserted = False
+            else:
+                for j in supporting_facts:
+                    supportingf = self._get_fact(j)
+
+                    for k in supportingf.supported_by:
+                        if k[0] == fact:
+                            supportingf.supported_by.remove(k)
+
+                    self.help(supportingf)
+
+                for j in supporting_rules:
+                    supportingr = self._get_rule(j)
+                    for k in supportingr.supported_by:
+                        if k[0] == fact:
+                            supportingr.supported_by.remove(k)
+                    self.help(supportingr)
+                self.facts.remove(fact)
+
+        elif fact_or_rule in self.rules:
+            rule = self._get_rule(fact_or_rule)
+            supporting_facts1 = rule.supports_facts
+            supporting_rules1 = rule.supports_rules
+            if (len(rule.supported_by) < 1) and (not (rule.asserted)):
+                for j in supporting_facts1:
+                    supportingf = self._get_fact(j)
+                    for k in supportingf.supported_by:
+                        if k[1] == rule:
+                            supportingf.supported_by.remove(k)
+
+                    self.help(supportingf)
+
+                for j in supporting_rules1:
+                    supportingr = self._get_rule(j)
+                    for k in supportingr.supported_by:
+                        if k[1] == rule:
+                            supportingr.supported_by.remove(k)
+                    self.help(supportingr)
+                self.rules.remove(rule)
+
+    def kb_retract(self, fact):
+        """Retract a fact from the KB
         Args:
             fact (Fact) - Fact to be retracted
-
         Returns:
             None
         """
-        printv("Retracting {!r}", 0, verbose, [fact_or_rule])
+        printv("Retracting {!r}", 0, verbose, [fact])
         ####################################################
         # Student code goes here
-        
+        if factq(fact):
+            self.help(fact)
+
 
 class InferenceEngine(object):
     def fc_infer(self, fact, rule, kb):
@@ -140,9 +190,35 @@ class InferenceEngine(object):
             kb (KnowledgeBase) - A KnowledgeBase
 
         Returns:
-            Nothing            
+            Nothing
         """
         printv('Attempting to infer from {!r} and {!r} => {!r}', 1, verbose,
-            [fact.statement, rule.lhs, rule.rhs])
+               [fact.statement, rule.lhs, rule.rhs])
         ####################################################
-        # Student code goes here
+        my_binding = match(fact.statement, rule.lhs[0])
+        my_pair = [fact, rule]
+
+        if (my_binding != False):
+
+            if (len(rule.lhs) == 1):
+                my_fact = Fact(instantiate(rule.rhs, my_binding))
+
+                rule.supports_facts.append(my_fact)
+                fact.supports_facts.append(my_fact)
+
+                my_fact.supported_by.append(my_pair)
+                kb.kb_assert(my_fact)
+
+            elif (len(rule.lhs) > 1):
+                left = []
+                for i in range(len(rule.lhs) - 1):
+                    left.append(instantiate(rule.lhs[i + 1], my_binding))
+
+                left = [left, instantiate(rule.rhs, my_binding)]
+                my_rule = Rule(left)
+
+                rule.supports_rules.append(my_rule)
+                fact.supports_rules.append(my_rule)
+
+                my_rule.supported_by.append(my_pair)
+                kb.kb_assert(my_rule)
